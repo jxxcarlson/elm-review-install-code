@@ -9,8 +9,8 @@ module MagicToken.AddToTypes exposing (rule)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
+import Elm.Syntax.Type
 import Review.Rule as Rule exposing (Error, Rule)
-
 
 
 {-| Reports... REPLACEME
@@ -49,42 +49,34 @@ elm-review --template undefined/example --rules MagicToken.AddToTypes
 -}
 rule : Rule
 rule =
-    --Rule.newModuleRuleSchemaUsingContextCreator "MagicToken.AddToTypes" initialContext
-    --    |> Rule.withDeclarationEnterVisitor declarationVisitor
-    --    |> Rule.fromModuleRuleSchema
-    Rule.newModuleRuleSchema "MagicToken.AddToTypes" { isInUpdateFunction = False }
-            |> Rule.withDeclarationEnterVisitor declarationVisitor
-            --|> Rule.withExpressionEnterVisitor expressionVisitor
-            |> Rule.fromModuleRuleSchema
+    Rule.newModuleRuleSchema "MagicToken.AddToTypes" Nothing
+        |> Rule.withDeclarationEnterVisitor declarationVisitor
+        |> Rule.fromModuleRuleSchema
 
 
 declarationVisitor : Node Declaration -> Context -> ( List nothing, Context )
 declarationVisitor node _ =
     case Node.value node of
-        Declaration.FunctionDeclaration function ->
+        Declaration.CustomTypeDeclaration tipe ->
             ( []
-            , { isInUpdateFunction =
-                    (function.declaration
-                        |> Node.value
-                        |> .name
-                        |> Node.value
-                    )
-                        == "update"
-              }
+            , Just
+                { typeInfo = tipe.name
+                , constructors = tipe.constructors
+                }
+                |> Debug.log "Type context"
             )
 
         _ ->
-            ( [], { isInUpdateFunction = False } )
+            ( [], Nothing )
+
 
 type alias Context =
-    { isInUpdateFunction : Bool
-    }
+    Maybe
+        { typeInfo : Node String
+        , constructors : List (Node Elm.Syntax.Type.ValueConstructor)
+        }
+
 
 type alias ModuleContext =
-    {
-     moduleName : String
-
+    { moduleName : String
     }
-
-
-
