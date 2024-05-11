@@ -10,22 +10,52 @@ import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Node as Node exposing (Node, range)
 import Elm.Syntax.Range exposing (Range)
 import Elm.Syntax.Type exposing (ValueConstructor)
-import Review.Rule as Rule exposing (Error, Rule)
 import Review.Fix as Fix exposing (Fix)
+import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
+import Review.Rule as Rule exposing (Error, Rule)
 
 
-
-
-makeAddToTypeRule : String -> String -> Rule
-makeAddToTypeRule typeName_ variantName_ =
-    Rule.newModuleRuleSchema "MagicToken.AddToType" Nothing
-        |> Rule.withDeclarationEnterVisitor (declarationVisitor typeName_ variantName_)
+makeAddToTypeRule : String -> String -> String -> Rule
+makeAddToTypeRule typeName_ variantName_ variantCode_ =
+    let
+        visitor : Node Declaration -> Context -> ( List (Error {}), Context )
+        visitor =
+            declarationVisitor typeName_ variantName_ variantCode_
+    in
+    Rule.newModuleRuleSchemaUsingContextCreator "MagicToken.AddToType" initContext
+        |> Rule.withDeclarationEnterVisitor visitor
         |> Rule.providesFixesForModuleRule
         |> Rule.fromModuleRuleSchema
 
 
+
+--rule : Rule
+--rule =
+--    Rule.newModuleRuleSchemaUsingContextCreator "NoDebug.Log" initContext
+--        |> Rule.withExpressionEnterVisitor expressionVisitor
+--        |> Rule.providesFixesForModuleRule
+--        |> Rule.fromModuleRuleSchema
+
+
+type alias Context =
+    { lookupTable : ModuleNameLookupTable
+    , rangesToIgnore : List Range
+    }
+
+
+initContext : Rule.ContextCreator () Context
+initContext =
+    Rule.initContextCreator
+        (\lookupTable () ->
+            { lookupTable = lookupTable
+            , rangesToIgnore = []
+            }
+        )
+        |> Rule.withModuleNameLookupTable
+
+
 errorWithFix : String -> String -> String -> Node a -> Maybe Range -> Error {}
-errorWithFix typeName_ variantName_ variantCode_ node rangeToRemove =
+errorWithFix typeName_ variantName_ variantCode_ node errorRange =
     Rule.errorWithFix
         { message = "Add " ++ variantName_ ++ " to " ++ typeName_
         , details =
@@ -33,7 +63,7 @@ errorWithFix typeName_ variantName_ variantCode_ node rangeToRemove =
             ]
         }
         (Node.range node)
-        (case rangeToRemove of
+        (case errorRange of
             Just range ->
                 [ fixMissingVariant range.end variantCode_ ]
 
@@ -42,22 +72,22 @@ errorWithFix typeName_ variantName_ variantCode_ node rangeToRemove =
         )
 
 
-fixMissingVariant : {row: Int, column : Int} -> String -> Fix
-fixMissingVariant {row, column} variantCode =
-    Fix.insertAt {row = row, column = column} variantCode
+fixMissingVariant : { row : Int, column : Int } -> String -> Fix
+fixMissingVariant { row, column } variantCode =
+    Fix.insertAt { row = row, column = column } variantCode
 
-declarationVisitor : String -> String -> Node Declaration -> Context -> ( List (Error {}), Context )
-declarationVisitor typeName variantName_ node _ =
+declarationVisitor : String -> String -> String -> Node Declaration -> Context -> ( List (Error {}), Context )
+declarationVisitor typeName_ variantName_ variantCode_ node context =
     case Node.value node of
         Declaration.CustomTypeDeclaration type_ ->
-            if Node.value type_.name == typeName then
-                checkForVariant variantName_ (Node.range node) type_
+            if Node.value type_.name == typeName_ then
+                ( [ errorWithFix typeName_ variantName_ variantCode_ node (Just <| Node.range node) ], context )
 
             else
-                ( [], Nothing )
+                ( [], context )
 
         _ ->
-            ( [], Nothing )
+            ( [], context )
 
 
 checkForVariant : String -> Range -> { a | constructors : List (Node ValueConstructor) } -> ( List (Error {}), Maybe b )
@@ -84,24 +114,14 @@ variantName node =
     Node.value node |> .name |> Node.value
 
 
-contextOfNode : Node Declaration -> Context
-contextOfNode node =
-    case Node.value node of
-        Declaration.CustomTypeDeclaration tipe ->
-            --Just { typeInfo =  node.name
-            --    , constructors = Node.value node
-            --    }
-            Nothing
-
-        _ ->
-            Nothing
 
 
-type alias Context =
-    Maybe
-        { typeInfo : Node String
-        , constructors : List (Node ValueConstructor)
-        }
+
+--type alias Context =
+--    Maybe
+--        { typeInfo : Node String
+--        , constructors : List (Node ValueConstructor)
+--        }
 
 
 type alias ModuleContext =
