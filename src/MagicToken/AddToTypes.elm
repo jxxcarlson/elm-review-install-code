@@ -55,25 +55,53 @@ rule =
         |> Debug.log "RULE_OUTPUT"
 
 
-declarationVisitor : Node Declaration -> Context -> List (Error {})
+declarationVisitor : Node Declaration -> Context ->  (List (Error {}) , Context)
 declarationVisitor node _ =
     case Node.value node of
         Declaration.CustomTypeDeclaration tipe ->
             case tipe.name of
-                Node _ "FrontendMsg" ->
-                    [ Rule.error
-                        { message = "Replace `frits.com` by `fruits.com`"
-                        , details = [ "This typo has been made and noticed by users too many times. Our company is `fruits.com`, not `frits.com`." ]
+                Node.Node _ "FrontendMsg" ->
+                     ([Rule.error
+                        { message = "FrontendMsg"
+                        , details = [ Debug.toString  tipe.constructors]
                         }
                         -- This is the location of the problem in the source code
-                        (Node.range node)
-                    ]
+                        (Node.range node)]
+                        ,
+                         contextOfNode node
+                         )
+
                 _ ->
-                    []
+                   ( [], Nothing)
 
 
         _ ->
-            []
+            ( [], Nothing)
+
+-- Type mismatch
+-- Required: (List (Error { }), Context)
+-- Found: List (Error { }, Context)
+
+--type Declaration
+--    = FunctionDeclaration Function
+--    | AliasDeclaration TypeAlias
+--    | CustomTypeDeclaration Type
+--    | PortDeclaration Signature
+--    | InfixDeclaration Infix
+--    | Destructuring (Node Pattern) (Node Expression)
+
+
+contextOfNode : Node Declaration -> Context
+contextOfNode node =
+    case Node.value node of
+        Declaration.CustomTypeDeclaration tipe ->
+            --Just { typeInfo =  node.name
+            --    , constructors = Node.value node
+            --    }
+            Nothing
+
+        _ ->
+            Nothing
 
 
 type alias Context =
