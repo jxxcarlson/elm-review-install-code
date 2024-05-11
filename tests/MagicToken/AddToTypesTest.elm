@@ -7,7 +7,7 @@ import Test exposing (Test, describe, test)
 
 all : Test
 all =
-    describe "MagicToken.AddToTypes"
+    describe "q"
         [ test "should not report an error when REPLACEME" <|
             \() ->
                 """module A exposing (..)
