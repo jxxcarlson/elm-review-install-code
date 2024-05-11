@@ -1,12 +1,10 @@
 module ReviewConfig exposing (config)
 
-import MagicToken.AddToTypes
+import MagicToken.AddToType
 import Review.Rule exposing (Rule)
 
 
 config : List Rule
 config =
-    [ -- MagicToken.AddToTypes.rule
-       MagicToken.AddToTypes.makeRule "FrontendMsg" "Bar"
-    -- other rules...
+    [ MagicToken.AddToType.makeAddToTypeRule "FrontendMsg" "Bar"
     ]

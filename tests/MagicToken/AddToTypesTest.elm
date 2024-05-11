@@ -1,6 +1,6 @@
 module MagicToken.AddToTypesTest exposing (all)
 
-import MagicToken.AddToTypes exposing (rule)
+import MagicToken.AddToType exposing (rule)
 import Review.Test
 import Test exposing (Test, describe, test)
 
