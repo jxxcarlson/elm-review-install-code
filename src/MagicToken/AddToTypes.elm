@@ -63,18 +63,6 @@ declarationVisitor node _ =
         Declaration.CustomTypeDeclaration type_ ->
             case type_.name of
                 Node.Node _ "FrontendMsg" ->
-                   --if  List.member "Bar" (List.map variantName tipe.constructors) then
-                   --   ( [], Nothing)
-                   --else
-                   --     ( [Rule.error
-                   --     { message = "FrontendMsg"
-                   --     , details = [ Debug.toString  (List.map variantName tipe.constructors)]
-                   --     }
-                   --     -- This is the location of the problem in the source code
-                   --     (Node.range node)]
-                   --     ,
-                   --      contextOfNode node
-                   --      )
                    checkForVariant "Bar" (Node.range node) type_
 
 
@@ -93,9 +81,9 @@ checkForVariant variantName_ range type_ =
       then ([], Nothing)
       else ([Rule.error
             { message = "FrontendMsg: variant " ++ variantName_ ++ " is missing"
-            , details = [ Debug.toString  (List.map variantName type_.constructors)]
+            , details = [ Debug.toString  (List.map variantName type_.constructors),
+              "Error location: " ++ Debug.toString range]
             }
-            -- This is the location of the problem in the source code
            range]
             ,
             Nothing
