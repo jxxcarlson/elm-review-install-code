@@ -1,2 +1,6 @@
 .idea/
 elm-stuff/
+TestStuff.elm
+call-graph.json
+out.json
+report.json
