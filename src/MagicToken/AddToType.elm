@@ -11,6 +11,7 @@ import Elm.Syntax.Node as Node exposing (Node, range)
 import Elm.Syntax.Range exposing (Range)
 import Elm.Syntax.Type exposing (ValueConstructor)
 import Review.Rule as Rule exposing (Error, Rule)
+import Review.Fix as Fix exposing (Fix)
 
 
 
@@ -22,6 +23,28 @@ makeAddToTypeRule typeName_ variantName_ =
         |> Rule.providesFixesForModuleRule
         |> Rule.fromModuleRuleSchema
 
+
+errorWithFix : String -> String -> String -> Node a -> Maybe Range -> Error {}
+errorWithFix typeName_ variantName_ variantCode_ node rangeToRemove =
+    Rule.errorWithFix
+        { message = "Add " ++ variantName_ ++ " to " ++ typeName_
+        , details =
+            [ "This addition is required to add magic-token authentication to your application"
+            ]
+        }
+        (Node.range node)
+        (case rangeToRemove of
+            Just range ->
+                [ fixMissingVariant range.end variantCode_ ]
+
+            Nothing ->
+                []
+        )
+
+
+fixMissingVariant : {row: Int, column : Int} -> String -> Fix
+fixMissingVariant {row, column} variantCode =
+    Fix.insertAt {row = row, column = column} variantCode
 
 declarationVisitor : String -> String -> Node Declaration -> Context -> ( List (Error {}), Context )
 declarationVisitor typeName variantName_ node _ =
