@@ -48,22 +48,23 @@ elm-review --template undefined/example --rules MagicToken.AddToTypes
 ```
 
 -}
-rule : Rule
-rule =
+makeRule : String -> String -> Rule
+makeRule typeName_ variantName_ =
     Rule.newModuleRuleSchema "MagicToken.AddToTypes" Nothing
-        |> Rule.withDeclarationEnterVisitor declarationVisitor
+        |> Rule.withDeclarationEnterVisitor (declarationVisitor typeName_ variantName_)
         |> Rule.fromModuleRuleSchema
         |> Debug.log "RULE_OUTPUT"
 
+rule = makeRule "FrontendMsg" "Bar"
 
-declarationVisitor : Node Declaration -> Context ->  (List (Error {}) , Context)
-declarationVisitor node _ =
+declarationVisitor : String -> String -> Node Declaration -> Context ->  (List (Error {}) , Context)
+declarationVisitor typeName_ variantName_ node _ =
 
     case Node.value node of
         Declaration.CustomTypeDeclaration type_ ->
             case type_.name of
                 Node.Node _ "FrontendMsg" ->
-                   checkForVariant "Bar" (Node.range node) type_
+                   checkForVariant variantName_ (Node.range node) type_
 
 
                 _ ->
