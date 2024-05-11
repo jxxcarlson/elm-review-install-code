@@ -1,4 +1,4 @@
-module MagicToken.AddToTypes exposing (rule)
+module MagicToken.AddToTypes exposing (makeRule)
 
 {-|
 
@@ -55,7 +55,7 @@ makeRule typeName_ variantName_ =
         |> Rule.fromModuleRuleSchema
         |> Debug.log "RULE_OUTPUT"
 
-rule = makeRule "FrontendMsg" "Bar"
+-- rule = makeRule "FrontendMsg" "Bar"
 
 declarationVisitor : String -> String -> Node Declaration -> Context ->  (List (Error {}) , Context)
 declarationVisitor typeName_ variantName_ node _ =
