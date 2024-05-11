@@ -7,7 +7,6 @@ module MagicToken.AddToType exposing (makeAddToTypeRule)
 -}
 
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
-import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node, range)
 import Elm.Syntax.Range exposing (Range)
 import Elm.Syntax.Type exposing (ValueConstructor)
