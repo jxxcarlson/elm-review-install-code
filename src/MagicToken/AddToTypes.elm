@@ -61,7 +61,10 @@ declarationVisitor node _ =
         Declaration.CustomTypeDeclaration tipe ->
             case tipe.name of
                 Node.Node _ "FrontendMsg" ->
-                     ([Rule.error
+                   if  List.member "Bar" (List.map variantName tipe.constructors) then
+                      ( [], Nothing)
+                   else
+                        ( [Rule.error
                         { message = "FrontendMsg"
                         , details = [ Debug.toString  (List.map variantName tipe.constructors)]
                         }
@@ -71,12 +74,29 @@ declarationVisitor node _ =
                          contextOfNode node
                          )
 
+
                 _ ->
                    ( [], Nothing)
 
 
         _ ->
             ( [], Nothing)
+
+
+
+checkForVariant : String -> Node { a | tipe : { b | constructors : List (Node Elm.Syntax.Type.ValueConstructor) } } -> (List (Error {  }), Maybe c)
+checkForVariant variantName_ node =
+    if List.member variantName_ (List.map variantName (Node.value node).tipe.constructors)
+      then ([], Nothing)
+      else ([Rule.error
+            { message = "FrontendMsg: variant " ++ variantName_ ++ " is missing"
+            , details = [ Debug.toString  (List.map variantName (Node.value node).tipe.constructors)]
+            }
+            -- This is the location of the problem in the source code
+            (Node.range node)]
+            ,
+            Nothing
+            )
 
 variantName : Node Elm.Syntax.Type.ValueConstructor  -> String
 variantName node =
