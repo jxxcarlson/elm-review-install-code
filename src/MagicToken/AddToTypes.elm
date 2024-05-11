@@ -55,20 +55,25 @@ rule =
         |> Debug.log "RULE_OUTPUT"
 
 
-declarationVisitor : Node Declaration -> Context -> ( List nothing, Context )
+declarationVisitor : Node Declaration -> Context -> List (Error {})
 declarationVisitor node _ =
     case Node.value node of
         Declaration.CustomTypeDeclaration tipe ->
-            ( []
-            , Just
-                { typeInfo = tipe.name
-                , constructors = tipe.constructors
-                }
-                |> Debug.log "Type context"
-            )
+            case tipe.name of
+                Node _ "FrontendMsg" ->
+                    [ Rule.error
+                        { message = "Replace `frits.com` by `fruits.com`"
+                        , details = [ "This typo has been made and noticed by users too many times. Our company is `fruits.com`, not `frits.com`." ]
+                        }
+                        -- This is the location of the problem in the source code
+                        (Node.range node)
+                    ]
+                _ ->
+                    []
+
 
         _ ->
-            ( [], Nothing )
+            []
 
 
 type alias Context =
