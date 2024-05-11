@@ -19,6 +19,7 @@ makeAddToTypeRule : String -> String -> Rule
 makeAddToTypeRule typeName_ variantName_ =
     Rule.newModuleRuleSchema "MagicToken.AddToType" Nothing
         |> Rule.withDeclarationEnterVisitor (declarationVisitor typeName_ variantName_)
+        |> Rule.providesFixesForModuleRule
         |> Rule.fromModuleRuleSchema
 
 
