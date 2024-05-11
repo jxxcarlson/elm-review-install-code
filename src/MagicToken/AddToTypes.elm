@@ -8,7 +8,8 @@ module MagicToken.AddToTypes exposing (rule)
 
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
-import Elm.Syntax.Node as Node exposing (Node)
+import Elm.Syntax.Node as Node exposing (Node,range)
+import Elm.Syntax.Range
 import Elm.Syntax.Type
 import Review.Rule as Rule exposing (Error, Rule)
 
@@ -57,22 +58,24 @@ rule =
 
 declarationVisitor : Node Declaration -> Context ->  (List (Error {}) , Context)
 declarationVisitor node _ =
+
     case Node.value node of
-        Declaration.CustomTypeDeclaration tipe ->
-            case tipe.name of
+        Declaration.CustomTypeDeclaration type_ ->
+            case type_.name of
                 Node.Node _ "FrontendMsg" ->
-                   if  List.member "Bar" (List.map variantName tipe.constructors) then
-                      ( [], Nothing)
-                   else
-                        ( [Rule.error
-                        { message = "FrontendMsg"
-                        , details = [ Debug.toString  (List.map variantName tipe.constructors)]
-                        }
-                        -- This is the location of the problem in the source code
-                        (Node.range node)]
-                        ,
-                         contextOfNode node
-                         )
+                   --if  List.member "Bar" (List.map variantName tipe.constructors) then
+                   --   ( [], Nothing)
+                   --else
+                   --     ( [Rule.error
+                   --     { message = "FrontendMsg"
+                   --     , details = [ Debug.toString  (List.map variantName tipe.constructors)]
+                   --     }
+                   --     -- This is the location of the problem in the source code
+                   --     (Node.range node)]
+                   --     ,
+                   --      contextOfNode node
+                   --      )
+                   checkForVariant "Bar" (Node.range node) type_
 
 
                 _ ->
@@ -84,16 +87,16 @@ declarationVisitor node _ =
 
 
 
-checkForVariant : String -> Node { a | tipe : { b | constructors : List (Node Elm.Syntax.Type.ValueConstructor) } } -> (List (Error {  }), Maybe c)
-checkForVariant variantName_ node =
-    if List.member variantName_ (List.map variantName (Node.value node).tipe.constructors)
+checkForVariant : String -> Elm.Syntax.Range.Range -> { a | constructors : List (Node Elm.Syntax.Type.ValueConstructor) } -> (List (Error {  }), Maybe b)
+checkForVariant variantName_ range type_ =
+    if List.member variantName_ (List.map variantName  type_.constructors)
       then ([], Nothing)
       else ([Rule.error
             { message = "FrontendMsg: variant " ++ variantName_ ++ " is missing"
-            , details = [ Debug.toString  (List.map variantName (Node.value node).tipe.constructors)]
+            , details = [ Debug.toString  (List.map variantName type_.constructors)]
             }
             -- This is the location of the problem in the source code
-            (Node.range node)]
+           range]
             ,
             Nothing
             )
