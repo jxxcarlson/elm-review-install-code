@@ -63,7 +63,7 @@ declarationVisitor node _ =
                 Node.Node _ "FrontendMsg" ->
                      ([Rule.error
                         { message = "FrontendMsg"
-                        , details = [ Debug.toString  tipe.constructors]
+                        , details = [ Debug.toString  (List.map variantName tipe.constructors)]
                         }
                         -- This is the location of the problem in the source code
                         (Node.range node)]
@@ -77,6 +77,12 @@ declarationVisitor node _ =
 
         _ ->
             ( [], Nothing)
+
+variantName : Node Elm.Syntax.Type.ValueConstructor  -> String
+variantName node =
+    Node.value node |> .name |> Node.value
+
+
 
 -- Type mismatch
 -- Required: (List (Error { }), Context)
