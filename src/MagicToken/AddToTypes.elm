@@ -52,6 +52,7 @@ rule =
     Rule.newModuleRuleSchema "MagicToken.AddToTypes" Nothing
         |> Rule.withDeclarationEnterVisitor declarationVisitor
         |> Rule.fromModuleRuleSchema
+        |> Debug.log "RULE_OUTPUT"
 
 
 declarationVisitor : Node Declaration -> Context -> ( List nothing, Context )
