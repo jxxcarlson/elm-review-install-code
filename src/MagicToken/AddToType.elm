@@ -14,6 +14,8 @@ import Elm.Syntax.Type exposing (ValueConstructor)
 import Review.Rule as Rule exposing (Error, Rule)
 
 
+
+
 makeAddToTypeRule : String -> String -> Rule
 makeAddToTypeRule typeName_ variantName_ =
     Rule.newModuleRuleSchema "MagicToken.AddToType" Nothing
