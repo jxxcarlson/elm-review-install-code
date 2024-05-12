@@ -12,14 +12,13 @@ type alias BackendModel =
 type alias FrontendModel =
     { counter : Int
     , clientId : String
+    , quot : String
     }
 
 
 type FrontendMsg
     = Increment
     | Decrement
-    | Blatzo Int Int
-    | Bar
 
 
 type ToBackend
