@@ -40,8 +40,6 @@ makeAddToTypeRule typeName_ variant_ =
 
 type alias Context =
     { lookupTable : ModuleNameLookupTable
-    , rangesToIgnore : List Range
-    , variantNamesToIgnore : List String
     }
 
 
@@ -50,8 +48,6 @@ initContext =
     Rule.initContextCreator
         (\lookupTable () ->
             { lookupTable = lookupTable
-            , rangesToIgnore = []
-            , variantNamesToIgnore = []
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -85,19 +81,6 @@ declarationVisitor typeName_ variantName_ variantCode_ node context =
     case Node.value node of
         Declaration.CustomTypeDeclaration type_ ->
             let
-                extendRange : Range -> Context -> Context
-                extendRange range context_ =
-                    { context_ | rangesToIgnore = range :: context.rangesToIgnore }
-
-                updateVariantNamesToIgnore : String -> Context -> Context
-                updateVariantNamesToIgnore variantName context_ =
-                    { context_ | variantNamesToIgnore = variantName :: context.variantNamesToIgnore }
-
-                newContext =
-                    context
-                        |> extendRange (Node.range node)
-                        |> updateVariantNamesToIgnore variantName_
-
                 shouldFix : Node Declaration -> Context -> Bool
                 shouldFix node_ context_ =
                     let
@@ -109,20 +92,12 @@ declarationVisitor typeName_ variantName_ variantCode_ node context =
 
                                 _ ->
                                     []
-
-                        endOfNode =
-                            (Node.range node_).end
-
-                        endsToAvoid =
-                            context_.rangesToIgnore |> List.map .end
                     in
-                    (not <| List.member endOfNode endsToAvoid)
-                        && (not <| List.member variantName_ context.variantNamesToIgnore)
-                        && (not <| List.member variantName_ variantsOfNode)
+                    not <| List.member variantName_ variantsOfNode
             in
             if Node.value type_.name == typeName_ && shouldFix node context then
                 ( [ errorWithFix typeName_ variantName_ variantCode_ node (Just <| Node.range node) ]
-                , newContext
+                , context
                 )
 
             else

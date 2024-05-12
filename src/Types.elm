@@ -18,6 +18,8 @@ type alias FrontendModel =
 type FrontendMsg
     = Increment
     | Decrement
+    | Blatzo Int Int
+    | Bar
 
 
 type ToBackend
