@@ -15,18 +15,17 @@ import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNam
 import Review.Rule as Rule exposing (Error, Rule)
 
 
-makeAddToTypeRule : String -> String -> Rule
+makeAddToTypeRule : String -> String  -> Rule
 makeAddToTypeRule typeName_ variant_ =
     let
-        variantName_ =
-            variant_
-                |> String.split " "
-                |> List.head
-                |> Maybe.withDefault ""
-                |> String.trim
+        variantName_ = variant_
+          |> String.split " "
+          |> List.head
+          |> Maybe.withDefault ""
+          |> String.trim
 
-        variantCode_ =
-            "\n    | " ++ variant_
+
+        variantCode_= "\n    | " ++ variant_
 
         visitor : Node Declaration -> Context -> ( List (Error {}), Context )
         visitor =
@@ -110,7 +109,7 @@ declarationVisitor typeName_ variantName_ variantCode_ node context =
                     (not <| List.member endOfNode endsToAvoid)
                         && (not <| List.member variantName_ context.variantNamesToIgnore)
             in
-            if Node.value type_.name == typeName_ && shouldFix node newContext then
+            if Node.value type_.name == typeName_ && shouldFix node context then
                 ( [ errorWithFix typeName_ variantName_ variantCode_ node (Just <| Node.range node) ]
                 , newContext
                 )
