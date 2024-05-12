@@ -1,3 +1,4 @@
 scripts:
-   review: npx elm-review --template jxxcarlson/magic-token-review --rules MagicToken.AddToType --debug
+   # review: npx elm-review --template jxxcarlson/magic-token-review --rules MagicToken.AddToType --debug
+   review: npx elm-review
    cgraph: npx elm-review --template miniBill/elm-review-call-graph/example --extract --report=json | jq ".extracts.ExtractCallGraph" > call-graph.json
