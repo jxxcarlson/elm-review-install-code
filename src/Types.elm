@@ -19,6 +19,8 @@ type FrontendMsg
     = Increment
     | Decrement
     | FNoop
+    | Blatzo Int Int
+    | Bar
 
 
 type ToBackend

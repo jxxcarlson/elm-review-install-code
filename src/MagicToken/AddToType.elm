@@ -110,7 +110,7 @@ declarationVisitor typeName_ variantName_ variantCode_ node context =
                     (not <| List.member endOfNode endsToAvoid)
                         && (not <| List.member variantName_ context.variantNamesToIgnore)
             in
-            if Node.value type_.name == typeName_ && shouldFix node context then
+            if Node.value type_.name == typeName_ && shouldFix node newContext then
                 ( [ errorWithFix typeName_ variantName_ variantCode_ node (Just <| Node.range node) ]
                 , newContext
                 )
