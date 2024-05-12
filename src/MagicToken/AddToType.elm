@@ -28,15 +28,6 @@ makeAddToTypeRule typeName_ variantName_ variantCode_ =
         |> Rule.fromModuleRuleSchema
 
 
-
---rule : Rule
---rule =
---    Rule.newModuleRuleSchemaUsingContextCreator "NoDebug.Log" initContext
---        |> Rule.withExpressionEnterVisitor expressionVisitor
---        |> Rule.providesFixesForModuleRule
---        |> Rule.fromModuleRuleSchema
-
-
 type alias Context =
     { lookupTable : ModuleNameLookupTable
     , rangesToIgnore : List Range
@@ -76,52 +67,40 @@ fixMissingVariant : { row : Int, column : Int } -> String -> Fix
 fixMissingVariant { row, column } variantCode =
     Fix.insertAt { row = row, column = column } variantCode
 
+
 declarationVisitor : String -> String -> String -> Node Declaration -> Context -> ( List (Error {}), Context )
 declarationVisitor typeName_ variantName_ variantCode_ node context =
     case Node.value node of
         Declaration.CustomTypeDeclaration type_ ->
-            if Node.value type_.name == typeName_ then
-                ( [ errorWithFix typeName_ variantName_ variantCode_ node (Just <| Node.range node) ], context )
+            let
+                newRange =
+                    Node.range node :: context.rangesToIgnore
+
+                newContext =
+                    { context | rangesToIgnore = newRange }
+
+                shouldFix : Node Declaration -> Context ->  Bool
+                shouldFix  node_ context_ =
+                    let
+                        endOfNode =
+                            (Node.range node_).end
+                        endsToAvoid = context_.rangesToIgnore |> List.map .end
+                    in
+                       not <| List.member endOfNode endsToAvoid
+
+
+
+            in
+            if Node.value type_.name == typeName_ && shouldFix node context then
+                ( [ errorWithFix typeName_ variantName_ variantCode_ node (Just <| Node.range node) ]
+                , newContext
+                )
 
             else
                 ( [], context )
 
         _ ->
             ( [], context )
-
-
-checkForVariant : String -> Range -> { a | constructors : List (Node ValueConstructor) } -> ( List (Error {}), Maybe b )
-checkForVariant variantName_ range type_ =
-    if List.member variantName_ (List.map variantName type_.constructors) then
-        ( [], Nothing )
-
-    else
-        ( [ Rule.error
-                { message = "FrontendMsg: variant " ++ variantName_ ++ " is missing in the list"
-                , details =
-                    [ Debug.toString (List.map variantName type_.constructors)
-                    , "Error location: " ++ Debug.toString range
-                    ]
-                }
-                range
-          ]
-        , Nothing
-        )
-
-
-variantName : Node ValueConstructor -> String
-variantName node =
-    Node.value node |> .name |> Node.value
-
-
-
-
-
---type alias Context =
---    Maybe
---        { typeInfo : Node String
---        , constructors : List (Node ValueConstructor)
---        }
 
 
 type alias ModuleContext =
