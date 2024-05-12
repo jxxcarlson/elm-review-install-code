@@ -15,17 +15,18 @@ import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNam
 import Review.Rule as Rule exposing (Error, Rule)
 
 
-makeAddToTypeRule : String -> String  -> Rule
+makeAddToTypeRule : String -> String -> Rule
 makeAddToTypeRule typeName_ variant_ =
     let
-        variantName_ = variant_
-          |> String.split " "
-          |> List.head
-          |> Maybe.withDefault ""
-          |> String.trim
+        variantName_ =
+            variant_
+                |> String.split " "
+                |> List.head
+                |> Maybe.withDefault ""
+                |> String.trim
 
-
-        variantCode_= "\n    | " ++ variant_
+        variantCode_ =
+            "\n    | " ++ variant_
 
         visitor : Node Declaration -> Context -> ( List (Error {}), Context )
         visitor =
@@ -100,6 +101,15 @@ declarationVisitor typeName_ variantName_ variantCode_ node context =
                 shouldFix : Node Declaration -> Context -> Bool
                 shouldFix node_ context_ =
                     let
+                        variantsOfNode : List String
+                        variantsOfNode =
+                            case Node.value node_ of
+                                Declaration.CustomTypeDeclaration type__ ->
+                                    type__.constructors |> List.map (Node.value >> .name >> Node.value)
+
+                                _ ->
+                                    []
+
                         endOfNode =
                             (Node.range node_).end
 
@@ -108,6 +118,7 @@ declarationVisitor typeName_ variantName_ variantCode_ node context =
                     in
                     (not <| List.member endOfNode endsToAvoid)
                         && (not <| List.member variantName_ context.variantNamesToIgnore)
+                        && (not <| List.member variantName_ variantsOfNode)
             in
             if Node.value type_.name == typeName_ && shouldFix node context then
                 ( [ errorWithFix typeName_ variantName_ variantCode_ node (Just <| Node.range node) ]

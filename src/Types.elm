@@ -18,7 +18,6 @@ type alias FrontendModel =
 type FrontendMsg
     = Increment
     | Decrement
-    | FNoop
 
 
 type ToBackend
