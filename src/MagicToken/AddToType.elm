@@ -15,9 +15,19 @@ import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNam
 import Review.Rule as Rule exposing (Error, Rule)
 
 
-makeAddToTypeRule : String -> String -> String -> Rule
-makeAddToTypeRule typeName_ variantName_ variantCode_ =
+makeAddToTypeRule : String -> String -> Rule
+makeAddToTypeRule typeName_ variant_ =
     let
+        variantName_ =
+            variant_
+                |> String.split " "
+                |> List.head
+                |> Maybe.withDefault ""
+                |> String.trim
+
+        variantCode_ =
+            "\n    | " ++ variant_
+
         visitor : Node Declaration -> Context -> ( List (Error {}), Context )
         visitor =
             declarationVisitor typeName_ variantName_ variantCode_
