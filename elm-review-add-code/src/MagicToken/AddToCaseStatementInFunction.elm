@@ -60,7 +60,6 @@ declarationVisitor functionName clause functionCall (Node _ declaration) context
                 name =
                     Node.value (Node.value function.declaration).name
 
-                -- |> Debug.log "FUNCTION NAME"
                 namespace : String
                 namespace =
                     context.moduleName ++ "." ++ name
@@ -84,7 +83,30 @@ visitFunction namespace clause functionCall ignored function context =
     in
     case declaration.expression |> Node.value of
         CaseExpression { expression, cases } ->
-            ( [ errorWithFix clause functionCall declaration.expression (Just <| Node.range declaration.expression) ], context )
+            let
+                getPatterns : List Case -> List Pattern
+                getPatterns cases_ =
+                    cases_
+                        |> List.map (\( pattern, _ ) -> Node.value pattern)
+
+                findClause : String -> List Case -> Bool
+                findClause clause_ cases_ =
+                    List.any
+                        (\pattern ->
+                            case pattern of
+                                NamedPattern qualifiedNameRef _ ->
+                                    qualifiedNameRef.name == clause_
+
+                                _ ->
+                                    False
+                        )
+                        (getPatterns cases_)
+            in
+            if not (findClause clause cases) then
+                ( [ errorWithFix clause functionCall declaration.expression (Just <| Node.range declaration.expression) ], context )
+
+            else
+                ( [], context )
 
         _ ->
             ( [], context )
@@ -103,9 +125,9 @@ errorWithFix clause functionCall node errorRange =
             Just range ->
                 let
                     insertionPoint =
-                        { row = range.end.row + 2, column = 9 }
+                        { row = range.end.row + 2, column = 0 }
                 in
-                [ addMissingCase (insertionPoint |> Debug.log "INSERT AT") clause functionCall ]
+                [ addMissingCase insertionPoint clause functionCall ]
 
             Nothing ->
                 []
@@ -116,7 +138,7 @@ addMissingCase : { row : Int, column : Int } -> String -> String -> Fix
 addMissingCase { row, column } clause functionCall =
     let
         insertion =
-            clause ++ " -> " ++ functionCall |> Debug.log "INSERTION"
+            "\n\n        " ++ clause ++ " -> " ++ functionCall
     in
     Fix.insertAt { row = row, column = column } insertion
 

@@ -1,4 +1,4 @@
-module MagicToken.AddToTypeTest exposing (all)
+              module MagicToken.AddToTypeTest exposing (all)
 
 import MagicToken.AddToType exposing (rule)
 import Review.Test
