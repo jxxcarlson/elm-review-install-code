@@ -17,8 +17,3 @@ config =
         "SignInError message"
         "Token.Frontend.handleSignInError model message"
     ]
-
-
-
---AddUser realname username email ->
---       Token.Backend.addUser model clientId email realname username
