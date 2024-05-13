@@ -21,7 +21,6 @@ app =
 init : ( Model, Cmd BackendMsg )
 init =
     ( { counter = 0
-      , message = "hohoho!"
       }
     , Cmd.none
     )

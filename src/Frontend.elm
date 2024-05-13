@@ -38,7 +38,6 @@ init : ( Model, Cmd FrontendMsg )
 init =
     ( { counter = 0
       , clientId = ""
-      , message = "hohoho!"
       }
     , Cmd.none
     )
