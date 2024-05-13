@@ -1,4 +1,4 @@
-module MagicToken.AddToCaseStatementInFunction exposing (makeAddToCaseStatementInFunctionRule)
+module Install.ClauseInCase exposing (makeAddToCaseStatementInFunctionRule)
 
 {-|
 
@@ -11,7 +11,7 @@ import Elm.Syntax.Expression exposing (Case, CaseBlock, Expression(..), Function
 import Elm.Syntax.Node as Node exposing (Node(..), range)
 import Elm.Syntax.Pattern exposing (Pattern(..))
 import Elm.Syntax.Range exposing (Range)
-import MagicToken.Library exposing (..)
+import Install.Library exposing (..)
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
@@ -29,7 +29,7 @@ makeAddToCaseStatementInFunctionRule moduleName functionName clause functionCall
         visitor =
             declarationVisitor functionName clause functionCall
     in
-    Rule.newModuleRuleSchemaUsingContextCreator "MagicToken.AddToCaseStatementInFunction" initContext
+    Rule.newModuleRuleSchemaUsingContextCreator "Install.ClauseInCase" initContext
         |> Rule.withDeclarationEnterVisitor visitor
         |> Rule.providesFixesForModuleRule
         |> Rule.fromModuleRuleSchema

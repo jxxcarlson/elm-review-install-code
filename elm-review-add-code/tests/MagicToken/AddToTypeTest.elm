@@ -1,13 +1,13 @@
-              module MagicToken.AddToTypeTest exposing (all)
+              module Install.AddToTypeTest exposing (all)
 
-import MagicToken.AddToType exposing (rule)
+import Install.TypeVariant exposing (rule)
 import Review.Test
 import Test exposing (Test, describe, test)
 
 
 all : Test
 all =
-    describe "MagicToken.AddToType"
+    describe "Install.TypeVariant"
         [ test "should not report an error when REPLACEME" <|
             \() ->
                 """module A exposing (..)

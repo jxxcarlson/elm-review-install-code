@@ -1,20 +1,20 @@
 module ReviewConfig exposing (config)
 
-import MagicToken.AddToCaseStatementInFunction
-import MagicToken.AddToType
-import MagicToken.AddToTypeAlias
-import MagicToken.UpdateInit
+import Install.ClauseInCase
+import Install.FieldInTypeAlias
+import Install.Initializer
+import Install.TypeVariant
 import Review.Rule exposing (Rule)
 
 
 config : List Rule
 config =
-    [ -- MagicToken.AddToType.makeAddToTypeRule "FrontendMsg" "Bar"
-      -- MagicToken.AddToType.makeAddToTypeRule "ToBackend" "ResetCounter"
-      MagicToken.UpdateInit.makeRule "Backend" "init" "message" "\"hohoho!\""
+    [ -- Install.TypeVariant.makeAddToTypeRule "FrontendMsg" "Bar"
+      -- Install.TypeVariant.makeAddToTypeRule "ToBackend" "ResetCounter"
+      Install.Initializer.makeRule "Backend" "init" "message" "\"hohoho!\""
 
-    -- MagicToken.AddToTypeAlias.makeAddToTypeAliasRule "FrontendModel" "quot: String"
-    --, MagicToken.AddToCaseStatementInFunction.makeAddToCaseStatementInFunctionRule
+    -- Install.FieldInTypeAlias.makeAddToTypeAliasRule "FrontendModel" "quot: String"
+    --, Install.ClauseInCase.makeAddToCaseStatementInFunctionRule
     --    "Backend"
     --    "updateFromFrontend"
     --    "ResetCounter"

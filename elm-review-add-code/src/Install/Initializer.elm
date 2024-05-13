@@ -1,11 +1,11 @@
-module MagicToken.UpdateInit exposing (..)
+module Install.Initializer exposing (..)
 
 import Elm.Syntax.Declaration exposing (Declaration(..))
 import Elm.Syntax.Expression exposing (Case, CaseBlock, Expression(..), Function, FunctionImplementation, Lambda, LetBlock, LetDeclaration(..))
 import Elm.Syntax.Node as Node exposing (Node(..), range)
 import Elm.Syntax.Pattern exposing (Pattern(..))
 import Elm.Syntax.Range exposing (Range)
-import MagicToken.Library exposing (..)
+import Install.Library exposing (..)
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
@@ -23,7 +23,7 @@ makeRule moduleName functionName fieldName fieldValue =
         visitor =
             declarationVisitor moduleName functionName fieldName fieldValue
     in
-    Rule.newModuleRuleSchemaUsingContextCreator "MagicToken.UpdateInit" initContext
+    Rule.newModuleRuleSchemaUsingContextCreator "Install.Initializer" initContext
         |> Rule.withDeclarationEnterVisitor visitor
         |> Rule.providesFixesForModuleRule
         |> Rule.fromModuleRuleSchema
@@ -102,7 +102,7 @@ visitFunction namespace moduleName functionName fieldName fieldValue ignored fun
                         lastRange_ =
                             case expressions |> List.map Node.value |> List.head of
                                 Just recordExpr ->
-                                    MagicToken.Library.lastRange recordExpr
+                                    Install.Library.lastRange recordExpr
 
                                 Nothing ->
                                     Elm.Syntax.Range.empty
@@ -111,7 +111,7 @@ visitFunction namespace moduleName functionName fieldName fieldValue ignored fun
                         fieldNames_ =
                             case expressions |> List.map Node.value |> List.head of
                                 Just recordExpr ->
-                                    MagicToken.Library.fieldNames recordExpr
+                                    Install.Library.fieldNames recordExpr
 
                                 Nothing ->
                                     []

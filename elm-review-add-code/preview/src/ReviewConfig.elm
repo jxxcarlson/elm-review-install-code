@@ -11,11 +11,11 @@ when inside the directory containing this file.
 
 -}
 
-import MagicToken.AddToType
+import Install.AddToType
 import Review.Rule exposing (Rule)
 
 
 config : List Rule
 config =
-    [ MagicToken.AddToType.rule
+    [ Install.AddToType.rule
     ]

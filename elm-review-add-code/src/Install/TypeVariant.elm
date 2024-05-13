@@ -1,4 +1,4 @@
-module MagicToken.AddToTypeAlias exposing (..)
+module Install.TypeVariant exposing (makeAddToTypeRule)
 
 {-|
 
@@ -10,30 +10,29 @@ import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Node as Node exposing (Node, range)
 import Elm.Syntax.Range exposing (Range)
 import Elm.Syntax.Type exposing (ValueConstructor)
-import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
 
 
-makeAddToTypeAliasRule : String -> String -> Rule
-makeAddToTypeAliasRule typeName_ fieldDefinition_ =
+makeAddToTypeRule : String -> String -> Rule
+makeAddToTypeRule typeName_ variant_ =
     let
-        fieldName =
-            fieldDefinition_
-                |> String.split ":"
+        variantName_ =
+            variant_
+                |> String.split " "
                 |> List.head
                 |> Maybe.withDefault ""
                 |> String.trim
 
-        fieldCode =
-            "\n    , " ++ fieldDefinition_ ++ "\n    }"
+        variantCode_ =
+            "\n    | " ++ variant_
 
         visitor : Node Declaration -> Context -> ( List (Error {}), Context )
         visitor =
-            declarationVisitor typeName_ fieldName fieldCode
+            declarationVisitor typeName_ variantName_ variantCode_
     in
-    Rule.newModuleRuleSchemaUsingContextCreator "MagicToken.AddToTypeAlias" initContext
+    Rule.newModuleRuleSchemaUsingContextCreator "Install.TypeVariant" initContext
         |> Rule.withDeclarationEnterVisitor visitor
         |> Rule.providesFixesForModuleRule
         |> Rule.fromModuleRuleSchema
@@ -55,9 +54,9 @@ initContext =
 
 
 errorWithFix : String -> String -> String -> Node a -> Maybe Range -> Error {}
-errorWithFix typeName_ fieldName fieldCode node errorRange =
+errorWithFix typeName_ variantName_ variantCode_ node errorRange =
     Rule.errorWithFix
-        { message = "Add " ++ fieldName ++ " to " ++ typeName_
+        { message = "Add " ++ variantName_ ++ " to " ++ typeName_
         , details =
             [ "This addition is required to add magic-token authentication to your application"
             ]
@@ -65,49 +64,39 @@ errorWithFix typeName_ fieldName fieldCode node errorRange =
         (Node.range node)
         (case errorRange of
             Just range ->
-                [ fixMissingField range.end fieldCode ]
+                [ fixMissingVariant range.end variantCode_ ]
 
             Nothing ->
                 []
         )
 
 
-fixMissingField : { row : Int, column : Int } -> String -> Fix
-fixMissingField { row, column } fieldCode =
-    let
-        range =
-            { start = { row = row, column = 0 }, end = { row = row, column = column } }
-    in
-    Fix.replaceRangeBy range fieldCode
+fixMissingVariant : { row : Int, column : Int } -> String -> Fix
+fixMissingVariant { row, column } variantCode =
+    Fix.insertAt { row = row, column = column } variantCode
 
 
 declarationVisitor : String -> String -> String -> Node Declaration -> Context -> ( List (Error {}), Context )
-declarationVisitor typeName_ fieldName_ fieldValueCode_ node context =
+declarationVisitor typeName_ variantName_ variantCode_ node context =
     case Node.value node of
-        Declaration.AliasDeclaration type_ ->
+        Declaration.CustomTypeDeclaration type_ ->
             let
                 shouldFix : Node Declaration -> Context -> Bool
                 shouldFix node_ context_ =
                     let
-                        fieldsOfNode : List String
-                        fieldsOfNode =
+                        variantsOfNode : List String
+                        variantsOfNode =
                             case Node.value node_ of
-                                Declaration.AliasDeclaration typeAlias ->
-                                    case typeAlias.typeAnnotation |> Node.value of
-                                        TypeAnnotation.Record fields ->
-                                            fields
-                                                |> List.map (Node.value >> Tuple.first >> Node.value)
-
-                                        _ ->
-                                            []
+                                Declaration.CustomTypeDeclaration type__ ->
+                                    type__.constructors |> List.map (Node.value >> .name >> Node.value)
 
                                 _ ->
                                     []
                     in
-                    not <| List.member fieldName_ fieldsOfNode
+                    not <| List.member variantName_ variantsOfNode
             in
             if Node.value type_.name == typeName_ && shouldFix node context then
-                ( [ errorWithFix typeName_ fieldName_ fieldValueCode_ node (Just <| Node.range node) ]
+                ( [ errorWithFix typeName_ variantName_ variantCode_ node (Just <| Node.range node) ]
                 , context
                 )
 

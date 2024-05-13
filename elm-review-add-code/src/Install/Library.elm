@@ -1,4 +1,4 @@
-module MagicToken.Library exposing (..)
+module Install.Library exposing (..)
 
 {-|
 
