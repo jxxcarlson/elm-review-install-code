@@ -12,7 +12,6 @@ type alias BackendModel =
 type alias FrontendModel =
     { counter : Int
     , clientId : String
-    , quot : String
     }
 
 
