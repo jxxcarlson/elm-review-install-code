@@ -36,7 +36,11 @@ app =
 
 init : ( Model, Cmd FrontendMsg )
 init =
-    ( { counter = 0, clientId = "" }, Cmd.none )
+ref    ( { counter = 0
+      , clientId = ""
+      }
+    , Cmd.none
+    )
 
 
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
