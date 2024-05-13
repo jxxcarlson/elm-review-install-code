@@ -9,6 +9,7 @@ module MagicToken.Library exposing (..)
 import Elm.Syntax.Expression exposing (Case, CaseBlock, Expression(..), Function, FunctionImplementation, Lambda, LetBlock, LetDeclaration(..))
 import Elm.Syntax.Node as Node exposing (Node(..), range)
 import Elm.Syntax.Pattern exposing (Pattern(..))
+import Elm.Syntax.Range as Range exposing (Range)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
 import Set exposing (Set)
@@ -32,6 +33,20 @@ fieldNames expr =
 
         _ ->
             []
+
+
+lastRange : Expression -> Range
+lastRange expr =
+    case expr of
+        RecordExpr fields ->
+            List.map (\(Node rg _) -> rg) fields
+                |> List.reverse
+                |> List.head
+                |> Maybe.withDefault Range.empty
+                |> Debug.log "LAST_RANGE"
+
+        _ ->
+            Range.empty
 
 
 initContext : Rule.ContextCreator () Context

@@ -11,7 +11,7 @@ config : List Rule
 config =
     [ -- MagicToken.AddToType.makeAddToTypeRule "FrontendMsg" "Bar"
       -- MagicToken.AddToType.makeAddToTypeRule "ToBackend" "ResetCounter"
-      MagicToken.UpdateInit.makeRule "Backend" "init" "message" "hohoho!"
+      MagicToken.UpdateInit.makeRule "Backend" "init" "message" "\"hohoho!\""
 
     -- MagicToken.AddToTypeAlias.makeAddToTypeAliasRule "FrontendModel" "quot: String"
     --, MagicToken.AddToCaseStatementInFunction.makeAddToCaseStatementInFunctionRule

@@ -1,7 +1,7 @@
 scripts:
    redo:
-      - git co src/Types.elm
-      - git co src/Backend.elm
+      - git co src
       - npx elm-review --fix --debug
+   clean: git co src
    review: npx elm-review
    cgraph: npx elm-review --template miniBill/elm-review-call-graph/example --extract --report=json | jq ".extracts.ExtractCallGraph" > call-graph.json

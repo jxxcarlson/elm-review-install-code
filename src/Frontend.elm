@@ -36,8 +36,9 @@ app =
 
 init : ( Model, Cmd FrontendMsg )
 init =
-ref    ( { counter = 0
+    ( { counter = 0
       , clientId = ""
+      , message = "hohoho!"
       }
     , Cmd.none
     )

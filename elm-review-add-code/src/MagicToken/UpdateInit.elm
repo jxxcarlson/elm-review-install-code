@@ -17,11 +17,11 @@ type alias Ignored =
 
 
 makeRule : String -> String -> String -> String -> Rule
-makeRule moduleName functionName field fieldValue =
+makeRule moduleName functionName fieldName fieldValue =
     let
         visitor : Node Declaration -> Context -> ( List (Error {}), Context )
         visitor =
-            declarationVisitor functionName field fieldValue
+            declarationVisitor moduleName functionName fieldName fieldValue
     in
     Rule.newModuleRuleSchemaUsingContextCreator "MagicToken.UpdateInit" initContext
         |> Rule.withDeclarationEnterVisitor visitor
@@ -46,8 +46,8 @@ initContext =
         |> Rule.withModuleNameLookupTable
 
 
-declarationVisitor : String -> String -> String -> Node Declaration -> Context -> ( List (Rule.Error {}), ModuleContext )
-declarationVisitor functionName clause functionCall (Node _ declaration) context =
+declarationVisitor : String -> String -> String -> String -> Node Declaration -> Context -> ( List (Rule.Error {}), ModuleContext )
+declarationVisitor moduleName functionName fieldName fieldValue (Node _ declaration) context =
     case declaration of
         FunctionDeclaration function ->
             let
@@ -70,7 +70,7 @@ declarationVisitor functionName clause functionCall (Node _ declaration) context
                     context.moduleName ++ "." ++ name
             in
             if name == functionName then
-                visitFunction namespace clause functionCall Set.empty function context
+                visitFunction namespace moduleName functionName fieldName fieldValue Set.empty function context
 
             else
                 ( [], context )
@@ -79,8 +79,8 @@ declarationVisitor functionName clause functionCall (Node _ declaration) context
             ( [], context )
 
 
-visitFunction : String -> String -> String -> Ignored -> Function -> ModuleContext -> ( List (Rule.Error {}), ModuleContext )
-visitFunction namespace clause functionCall ignored function context =
+visitFunction : String -> String -> String -> String -> String -> Ignored -> Function -> ModuleContext -> ( List (Rule.Error {}), ModuleContext )
+visitFunction namespace moduleName functionName fieldName fieldValue ignored function context =
     let
         declaration : FunctionImplementation
         declaration =
@@ -95,12 +95,20 @@ visitFunction namespace clause functionCall ignored function context =
         _ =
             Debug.log "\n\nARGS" declaration.arguments
 
-        _ =
+        ( fieldNames, lastRange ) =
             case declaration.expression |> Node.value of
                 TupledExpression expressions ->
                     let
-                        --record : List (Node Expression)
-                        fieldNames =
+                        lastRange_ =
+                            case expressions |> List.map Node.value |> List.head of
+                                Just recordExpr ->
+                                    MagicToken.Library.lastRange recordExpr
+
+                                Nothing ->
+                                    Elm.Syntax.Range.empty
+
+                        fieldNames_ : List String
+                        fieldNames_ =
                             case expressions |> List.map Node.value |> List.head of
                                 Just recordExpr ->
                                     MagicToken.Library.fieldNames recordExpr
@@ -108,46 +116,25 @@ visitFunction namespace clause functionCall ignored function context =
                                 Nothing ->
                                     []
                     in
-                    Debug.log "\n\nFIELDS (1)" fieldNames
+                    ( fieldNames_, lastRange_ )
 
                 _ ->
-                    Debug.log "\n\nFIELDS (2)" []
+                    ( [], Elm.Syntax.Range.empty )
+
+        _ =
+            ( fieldNames, lastRange ) |> Debug.log "!!!LAST_RANGE!!!"
     in
-    case declaration.expression |> Node.value of
-        CaseExpression { expression, cases } ->
-            let
-                getPatterns : List Case -> List Pattern
-                getPatterns cases_ =
-                    cases_
-                        |> List.map (\( pattern, _ ) -> Node.value pattern)
+    if not <| List.member fieldName fieldNames then
+        ( [ errorWithFix fieldName fieldValue function.declaration (Just lastRange) ], context )
 
-                findClause : String -> List Case -> Bool
-                findClause clause_ cases_ =
-                    List.any
-                        (\pattern ->
-                            case pattern of
-                                NamedPattern qualifiedNameRef _ ->
-                                    qualifiedNameRef.name == clause_
-
-                                _ ->
-                                    False
-                        )
-                        (getPatterns cases_)
-            in
-            if not (findClause clause cases) then
-                ( [ errorWithFix clause functionCall declaration.expression (Just <| Node.range declaration.expression) ], context )
-
-            else
-                ( [], context )
-
-        _ ->
-            ( [], context )
+    else
+        ( [], context )
 
 
 errorWithFix : String -> String -> Node a -> Maybe Range -> Error {}
-errorWithFix clause functionCall node errorRange =
+errorWithFix fieldName fieldValue node errorRange =
     Rule.errorWithFix
-        { message = "Add handler for " ++ clause
+        { message = "Add field " ++ fieldName ++ " with value " ++ fieldValue ++ " to the model"
         , details =
             [ "This addition is required to add magic-token authentication to your application"
             ]
@@ -157,9 +144,9 @@ errorWithFix clause functionCall node errorRange =
             Just range ->
                 let
                     insertionPoint =
-                        { row = range.end.row + 2, column = 0 }
+                        { row = range.end.row, column = range.end.column } |> Debug.log "INSERTION_POINT"
                 in
-                [ addMissingCase insertionPoint clause functionCall ]
+                [ addMissingCase insertionPoint fieldName fieldValue ]
 
             Nothing ->
                 []
@@ -167,9 +154,9 @@ errorWithFix clause functionCall node errorRange =
 
 
 addMissingCase : { row : Int, column : Int } -> String -> String -> Fix
-addMissingCase { row, column } clause functionCall =
+addMissingCase insertionPoint fieldName fieldValue =
     let
         insertion =
-            "\n\n        " ++ clause ++ " -> " ++ functionCall
+            ", " ++ fieldName ++ " = " ++ fieldValue ++ "\n  " |> Debug.log "INSERTION"
     in
-    Fix.insertAt { row = row, column = column } insertion
+    Fix.insertAt ({ row = insertionPoint.row, column = insertionPoint.column } |> Debug.log "{COLUMN, ROW}") insertion
