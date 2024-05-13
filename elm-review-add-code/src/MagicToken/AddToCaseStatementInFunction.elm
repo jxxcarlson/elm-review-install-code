@@ -29,7 +29,7 @@ makeAddToCaseStatementInFunctionRule moduleName functionName clause functionCall
     let
         visitor : Node Declaration -> Context -> ( List (Error {}), Context )
         visitor =
-            declarationVisitor functionName
+            declarationVisitor functionName clause functionCall
     in
     Rule.newModuleRuleSchemaUsingContextCreator "MagicToken.AddToCaseStatementInFunction" initContext
         -- Required: ModuleRuleSchema { } Context → ModuleRuleSchema { hasAtLeastOneVisitor : () } ModuleContext
@@ -56,48 +56,22 @@ initContext =
         |> Rule.withModuleNameLookupTable
 
 
-errorWithFix : String -> String -> String -> Node a -> Maybe Range -> Error {}
-errorWithFix typeName_ fieldName fieldCode node errorRange =
-    Rule.errorWithFix
-        { message = "Add " ++ fieldName ++ " to " ++ typeName_
-        , details =
-            [ "This addition is required to add magic-token authentication to your application"
-            ]
-        }
-        (Node.range node)
-        (case errorRange of
-            Just range ->
-                [ fixMissingField range.end fieldCode ]
-
-            Nothing ->
-                []
-        )
-
-
-fixMissingField : { row : Int, column : Int } -> String -> Fix
-fixMissingField { row, column } fieldCode =
-    let
-        range =
-            { start = { row = row, column = 0 }, end = { row = row, column = column } }
-    in
-    Fix.replaceRangeBy range fieldCode
-
-
-declarationVisitor : String -> Node Declaration -> Context -> ( List (Rule.Error {}), ModuleContext )
-declarationVisitor functionName (Node _ declaration) context =
+declarationVisitor : String -> String -> String -> Node Declaration -> Context -> ( List (Rule.Error {}), ModuleContext )
+declarationVisitor functionName clause functionCall (Node _ declaration) context =
     case declaration of
         FunctionDeclaration function ->
             let
                 name : String
                 name =
-                    Node.value (Node.value function.declaration).name |> Debug.log "FUNCTION NAME"
+                    Node.value (Node.value function.declaration).name
 
+                -- |> Debug.log "FUNCTION NAME"
                 namespace : String
                 namespace =
                     context.moduleName ++ "." ++ name
             in
             if name == functionName then
-                ( [], visitFunction namespace Set.empty function context )
+                visitFunction namespace clause functionCall Set.empty function context
 
             else
                 ( [], context )
@@ -106,66 +80,50 @@ declarationVisitor functionName (Node _ declaration) context =
             ( [], context )
 
 
-upsert : comparable1 -> comparable2 -> Dict comparable1 (Set comparable2) -> Dict comparable1 (Set comparable2)
-upsert key value dict =
-    Dict.insert key (Set.insert value <| Maybe.withDefault Set.empty (Dict.get key dict)) dict
-
-
-visitFunction : String -> Ignored -> Function -> ModuleContext -> ModuleContext
-visitFunction namespace ignored function context =
+visitFunction : String -> String -> String -> Ignored -> Function -> ModuleContext -> ( List (Rule.Error {}), ModuleContext )
+visitFunction namespace clause functionCall ignored function context =
     let
         declaration : FunctionImplementation
         declaration =
             Node.value function.declaration
-
-        newIgnored : Ignored
-        newIgnored =
-            extractNamesFromPatterns declaration.arguments ignored
-                |> Set.insert (Node.value declaration.name)
-
-        foo =
-            case declaration.expression |> Node.value of
-                CaseExpression caseBlock ->
-                    Debug.toString caseBlock |> Debug.log "CASE BLOCK"
-
-                _ ->
-                    "-"
-
-        --Debug.log "DECL EXPRESSION" (declaration.expression |> Node.value)
     in
-    visitExpression namespace newIgnored declaration.expression context
-
-
-expressionVisitor : String -> String -> String -> String -> Node Expression -> Context -> ( List (Error {}), Context )
-expressionVisitor moduleName functionName clause functionCall node context =
-    case Node.value node of
-        CaseExpression caseBlock ->
-            let
-                _ =
-                    -- if Node.value name == functionName then
-                    Debug.log "\n\nCASE BLOCK" caseBlock
-
-                --shouldFix : Node Declaration -> Context -> Bool
-                --shouldFix node_ context_ =
-                --    let
-                --        variantsOfNode : List String
-                --        variantsOfNode =
-                --            case Node.value node_ of
-                --                Declaration.CustomTypeDeclaration type__ ->
-                --                    type__.constructors |> List.map (Node.value >> .name >> Node.value)
-                --
-                --                _ ->
-                --                    []
-                --    in
-                --    not <| List.member variantName_ variantsOfNode
-            in
-            ( --[ errorWithFix moduleName_ functionName_ node (Just <| Node.range node) ]
-              []
-            , context
-            )
+    case declaration.expression |> Node.value of
+        CaseExpression { expression, cases } ->
+            ( [ errorWithFix clause functionCall declaration.expression (Just <| Node.range declaration.expression) ], context )
 
         _ ->
             ( [], context )
+
+
+errorWithFix : String -> String -> Node a -> Maybe Range -> Error {}
+errorWithFix clause functionCall node errorRange =
+    Rule.errorWithFix
+        { message = "Add handler for " ++ clause
+        , details =
+            [ "This addition is required to add magic-token authentication to your application"
+            ]
+        }
+        (Node.range node)
+        (case errorRange of
+            Just range ->
+                let
+                    insertionPoint =
+                        { row = range.end.row + 2, column = 9 }
+                in
+                [ addMissingCase (insertionPoint |> Debug.log "INSERT AT") clause functionCall ]
+
+            Nothing ->
+                []
+        )
+
+
+addMissingCase : { row : Int, column : Int } -> String -> String -> Fix
+addMissingCase { row, column } clause functionCall =
+    let
+        insertion =
+            clause ++ " -> " ++ functionCall |> Debug.log "INSERTION"
+    in
+    Fix.insertAt { row = row, column = column } insertion
 
 
 type alias ModuleContext =
@@ -264,9 +222,6 @@ visitExpression namespace ignored ((Node _ expression) as expressionNode) contex
         RecordAccess child _ ->
             visitExpression namespace ignored child context
 
-        LetExpression letBlock ->
-            visitLetBlock namespace ignored letBlock context
-
         CaseExpression caseBlock ->
             visitCaseBlock namespace ignored caseBlock context
 
@@ -318,56 +273,3 @@ visitCase namespace ignored ( pattern, expression ) context =
         (extractNamesFromPattern pattern ignored)
         expression
         context
-
-
-visitLetBlock : String -> Ignored -> LetBlock -> ModuleContext -> ModuleContext
-visitLetBlock namespace ignored { declarations, expression } context =
-    let
-        newIgnored : Ignored
-        newIgnored =
-            List.foldl extractNamesFromLetDeclaration ignored declarations
-
-        contextAfterDeclarations : ModuleContext
-        contextAfterDeclarations =
-            List.foldl
-                (visitLetDeclaration namespace newIgnored)
-                context
-                declarations
-    in
-    visitExpression namespace newIgnored expression contextAfterDeclarations
-
-
-extractNamesFromLetDeclaration : Node LetDeclaration -> Ignored -> Ignored
-extractNamesFromLetDeclaration (Node _ letDeclaration) ignored =
-    case letDeclaration of
-        LetDestructuring pattern _ ->
-            extractNamesFromPattern pattern ignored
-
-        LetFunction function ->
-            let
-                name : String
-                name =
-                    function.declaration
-                        |> Node.value
-                        |> .name
-                        |> Node.value
-            in
-            Set.insert name ignored
-
-
-visitLetDeclaration : String -> Ignored -> Node LetDeclaration -> ModuleContext -> ModuleContext
-visitLetDeclaration namespace ignored (Node _ letDeclaration) context =
-    case letDeclaration of
-        LetDestructuring pattern expression ->
-            let
-                newIgnored : Set String
-                newIgnored =
-                    extractNamesFromPattern pattern ignored
-            in
-            visitExpression namespace
-                newIgnored
-                expression
-                context
-
-        LetFunction function ->
-            visitFunction namespace ignored function context
