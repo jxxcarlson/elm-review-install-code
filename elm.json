@@ -11,8 +11,6 @@
             "elm/html": "1.0.0",
             "elm/http": "2.0.0",
             "jfmengels/elm-review": "2.13.2",
-            "lamdera/codecs": "1.0.0",
-            "lamdera/core": "1.0.0",
             "stil4m/elm-syntax": "7.3.2"
         },
         "indirect": {
