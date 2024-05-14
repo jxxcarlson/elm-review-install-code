@@ -20,6 +20,9 @@ that `elm-review` is installed, and run `npx elm-review` at the
 root of the project.  A total of five changes should be made to 
 the Lamdera code in `src`.
 
+See the comments at the top of `Install/ClauseInCase.elm` for
+more information.
+
 Once the code stabilized, it will be published on the package manager.
 
 

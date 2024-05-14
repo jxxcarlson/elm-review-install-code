@@ -1,8 +1,30 @@
 module Install.ClauseInCase exposing (makeRule)
 
-{-|
+{-| Add a clause to to a case expression in a specified function
+in a specified module. For example, if you put the code below in your
+`ReviewConfig.elm` file, running `elm-review` will add the clause
+`ResetCounter` to the `updateFromFrontend` function in the `Backend` module.
 
-@docs rule
+    -- code for ReviewConfig.elm:
+    Install.ClauseInCase.makeRule
+        "Backend"
+        "updateFromFrontend"
+        "ResetCounter"
+        "( { model | counter = 0 }, broadcast (CounterNewValue 0 clientId) )"
+    ```
+
+    Thus we will have
+
+        updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
+        updateFromFrontend sessionId clientId msg model =
+            case msg of
+                CounterIncremented ->
+                ...
+
+                ResetCounter ->
+                    ( { model | counter = 0 }, broadcast (CounterNewValue 0 clientId) )
+
+    @docs rule
 
 -}
 
@@ -12,15 +34,9 @@ import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..), range)
 import Elm.Syntax.Pattern exposing (Pattern(..))
 import Elm.Syntax.Range exposing (Range)
-import Install.Library exposing (..)
 import Review.Fix as Fix exposing (Fix)
-import Review.ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
 import Set exposing (Set)
-
-
-type alias Ignored =
-    Set String
 
 
 makeRule : String -> String -> String -> String -> Rule
@@ -39,6 +55,10 @@ makeRule moduleName functionName clause functionCall =
 type alias Context =
     { moduleName : ModuleName
     }
+
+
+type alias Ignored =
+    Set String
 
 
 contextCreator : Rule.ContextCreator () { moduleName : ModuleName }
