@@ -12,11 +12,10 @@ config =
     [ -- Install.TypeVariant.makeAddToTypeRule "FrontendMsg" "Bar"
       -- Install.TypeVariant.makeAddToTypeRule "ToBackend" "ResetCounter"
       -- Install.Initializer.makeRule "Backend" "init" "message" "\"hohoho!\""
-      Install.FieldInTypeAlias.makeRule "Types" "FrontendModel" "quot: String"
-
-    --, Install.ClauseInCase.makeAddToCaseStatementInFunctionRule
-    --    "Backend"
-    --    "updateFromFrontend"
-    --    "ResetCounter"
-    --    "( { model | counter = 0 }, broadcast (CounterNewValue 0 clientId) )"
+      --  Install.FieldInTypeAlias.makeRule "Types" "FrontendModel" "quot: String"
+      Install.ClauseInCase.makeRule
+        "Backend"
+        "updateFromFrontend"
+        "ResetCounter"
+        "( { model | counter = 0 }, broadcast (CounterNewValue 0 clientId) )"
     ]

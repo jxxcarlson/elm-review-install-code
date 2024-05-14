@@ -1,4 +1,4 @@
-module Install.ClauseInCase exposing (makeAddToCaseStatementInFunctionRule)
+module Install.ClauseInCase exposing (makeRule)
 
 {-|
 
@@ -8,6 +8,7 @@ module Install.ClauseInCase exposing (makeAddToCaseStatementInFunctionRule)
 
 import Elm.Syntax.Declaration exposing (Declaration(..))
 import Elm.Syntax.Expression exposing (Case, CaseBlock, Expression(..), Function, FunctionImplementation, Lambda, LetBlock, LetDeclaration(..))
+import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..), range)
 import Elm.Syntax.Pattern exposing (Pattern(..))
 import Elm.Syntax.Range exposing (Range)
@@ -22,38 +23,38 @@ type alias Ignored =
     Set String
 
 
-makeAddToCaseStatementInFunctionRule : String -> String -> String -> String -> Rule
-makeAddToCaseStatementInFunctionRule moduleName functionName clause functionCall =
+makeRule : String -> String -> String -> String -> Rule
+makeRule moduleName functionName clause functionCall =
     let
         visitor : Node Declaration -> Context -> ( List (Error {}), Context )
         visitor =
-            declarationVisitor functionName clause functionCall
+            declarationVisitor moduleName functionName clause functionCall
     in
-    Rule.newModuleRuleSchemaUsingContextCreator "Install.ClauseInCase" initContext
+    Rule.newModuleRuleSchemaUsingContextCreator "Install.ClauseInCase" contextCreator
         |> Rule.withDeclarationEnterVisitor visitor
         |> Rule.providesFixesForModuleRule
         |> Rule.fromModuleRuleSchema
 
 
 type alias Context =
-    { lookupTable : ModuleNameLookupTable
-    , moduleName : String
+    { moduleName : ModuleName
     }
 
 
-initContext : Rule.ContextCreator () Context
-initContext =
+contextCreator : Rule.ContextCreator () { moduleName : ModuleName }
+contextCreator =
     Rule.initContextCreator
-        (\lookupTable () ->
-            { lookupTable = lookupTable
-            , moduleName = ""
+        (\moduleName () ->
+            { moduleName = moduleName
+
+            -- ...other fields
             }
         )
-        |> Rule.withModuleNameLookupTable
+        |> Rule.withModuleName
 
 
-declarationVisitor : String -> String -> String -> Node Declaration -> Context -> ( List (Rule.Error {}), ModuleContext )
-declarationVisitor functionName clause functionCall (Node _ declaration) context =
+declarationVisitor : String -> String -> String -> String -> Node Declaration -> Context -> ( List (Rule.Error {}), Context )
+declarationVisitor moduleName functionName clause functionCall (Node _ declaration) context =
     case declaration of
         FunctionDeclaration function ->
             let
@@ -63,9 +64,9 @@ declarationVisitor functionName clause functionCall (Node _ declaration) context
 
                 namespace : String
                 namespace =
-                    context.moduleName ++ "." ++ name
+                    String.join "." context.moduleName ++ "." ++ name
             in
-            if name == functionName then
+            if name == functionName && moduleName == String.join "." context.moduleName then
                 visitFunction namespace clause functionCall Set.empty function context
 
             else
@@ -75,7 +76,7 @@ declarationVisitor functionName clause functionCall (Node _ declaration) context
             ( [], context )
 
 
-visitFunction : String -> String -> String -> Ignored -> Function -> ModuleContext -> ( List (Rule.Error {}), ModuleContext )
+visitFunction : String -> String -> String -> Ignored -> Function -> Context -> ( List (Rule.Error {}), Context )
 visitFunction namespace clause functionCall ignored function context =
     let
         declaration : FunctionImplementation
