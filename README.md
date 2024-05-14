@@ -15,10 +15,14 @@ computer program.
 The project is still in development, so expect it to change a lot
 over the next weeks and likely months.  Consider it an experiment.
 
-To test the review code in its current state, clone the project, make sure
-that `elm-review` is installed, and run `npx elm-review` at the 
-root of the project.  A total of five changes should be made to 
-the Lamdera code in `src`.
+To test the review code in its current state, try running this in 
+a clean Lamdera project:
+
+```
+npx elm-review --template jxxcarlson/elm-review-install-code/review
+```
+
+A total of five changes should be made to the Lamdera code in `src`.
 
 See the comments at the top of `Install/ClauseInCase.elm` for
 more information.
@@ -26,5 +30,5 @@ more information.
 Once the code stabilized, it will be published on the package manager.
 
 
-**Note.** The Lamdera code is not working: the Lamdera codecs have bee
+**Note.** The Lamdera code is not working: the Lamdera codecs have been
 removed for the time being so that `elm-review` will run.  An issue to be addresed.
