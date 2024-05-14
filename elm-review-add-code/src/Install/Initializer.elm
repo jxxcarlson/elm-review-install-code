@@ -2,6 +2,7 @@ module Install.Initializer exposing (..)
 
 import Elm.Syntax.Declaration exposing (Declaration(..))
 import Elm.Syntax.Expression exposing (Case, CaseBlock, Expression(..), Function, FunctionImplementation, Lambda, LetBlock, LetDeclaration(..))
+import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..), range)
 import Elm.Syntax.Pattern exposing (Pattern(..))
 import Elm.Syntax.Range exposing (Range)
@@ -23,51 +24,58 @@ makeRule moduleName functionName fieldName fieldValue =
         visitor =
             declarationVisitor moduleName functionName fieldName fieldValue
     in
-    Rule.newModuleRuleSchemaUsingContextCreator "Install.Initializer" initContext
+    Rule.newModuleRuleSchemaUsingContextCreator "Install.Initializer" contextCreator
         |> Rule.withDeclarationEnterVisitor visitor
         |> Rule.providesFixesForModuleRule
         |> Rule.fromModuleRuleSchema
 
 
 type alias Context =
-    { lookupTable : ModuleNameLookupTable
-    , moduleName : String
+    { moduleName : ModuleName
     }
 
 
-initContext : Rule.ContextCreator () Context
-initContext =
+
+--type alias Context =
+--    { lookupTable : ModuleNameLookupTable
+--    , moduleName : String
+--    }
+--initContext : Rule.ContextCreator () Context
+--initContext =
+--    Rule.initContextCreator
+--        (\lookupTable () ->
+--            { lookupTable = lookupTable
+--            , moduleName = ""
+--            }
+--        )
+--        |> Rule.withModuleNameLookupTable
+-- contextCreator : Rule.ContextCreator () Context
+
+
+contextCreator : Rule.ContextCreator () { moduleName : ModuleName }
+contextCreator =
     Rule.initContextCreator
-        (\lookupTable () ->
-            { lookupTable = lookupTable
-            , moduleName = ""
+        (\moduleName () ->
+            { moduleName = moduleName
+
+            -- ...other fields
             }
         )
-        |> Rule.withModuleNameLookupTable
+        |> Rule.withModuleName
 
 
-declarationVisitor : String -> String -> String -> String -> Node Declaration -> Context -> ( List (Rule.Error {}), ModuleContext )
+declarationVisitor : String -> String -> String -> String -> Node Declaration -> Context -> ( List (Rule.Error {}), Context )
 declarationVisitor moduleName functionName fieldName fieldValue (Node _ declaration) context =
     case declaration of
         FunctionDeclaration function ->
             let
-                --type alias Function =
-                --    { documentation : Maybe (Node Documentation)
-                --    , signature : Maybe (Node Signature)
-                --    , declaration : Node FunctionImplementation
-                --    }
-                --_ =
-                --    Debug.log "SIGNATURE" function.signature
-                --
-                --_ =
-                --    Debug.log "F_DECLARATION" function.declaration
                 name : String
                 name =
                     Node.value (Node.value function.declaration).name
 
                 namespace : String
                 namespace =
-                    context.moduleName ++ "." ++ name
+                    String.join "." context.moduleName ++ "." ++ name
             in
             if name == functionName then
                 visitFunction namespace moduleName functionName fieldName fieldValue Set.empty function context
@@ -79,21 +87,15 @@ declarationVisitor moduleName functionName fieldName fieldValue (Node _ declarat
             ( [], context )
 
 
-visitFunction : String -> String -> String -> String -> String -> Ignored -> Function -> ModuleContext -> ( List (Rule.Error {}), ModuleContext )
+visitFunction : String -> String -> String -> String -> String -> Ignored -> Function -> Context -> ( List (Rule.Error {}), Context )
 visitFunction namespace moduleName functionName fieldName fieldValue ignored function context =
     let
         declaration : FunctionImplementation
         declaration =
             Node.value function.declaration
 
-        range =
-            Node.range function.declaration |> Debug.log "range"
-
-        _ =
-            Debug.log "\n\n\n\nNAME" declaration.name
-
-        _ =
-            Debug.log "\n\nARGS" declaration.arguments
+        isInCorrectModule =
+            moduleName == (context.moduleName |> String.join "")
 
         ( fieldNames, lastRange ) =
             case declaration.expression |> Node.value of
@@ -122,9 +124,12 @@ visitFunction namespace moduleName functionName fieldName fieldValue ignored fun
                     ( [], Elm.Syntax.Range.empty )
 
         _ =
-            ( fieldNames, lastRange ) |> Debug.log "!!!LAST_RANGE!!!"
+            ( fieldNames, lastRange )
     in
-    if not <| List.member fieldName fieldNames then
+    if
+        isInCorrectModule
+            && (not <| List.member fieldName fieldNames)
+    then
         ( [ errorWithFix fieldName fieldValue function.declaration (Just lastRange) ], context )
 
     else
@@ -144,7 +149,7 @@ errorWithFix fieldName fieldValue node errorRange =
             Just range ->
                 let
                     insertionPoint =
-                        { row = range.end.row, column = range.end.column } |> Debug.log "INSERTION_POINT"
+                        { row = range.end.row, column = range.end.column }
                 in
                 [ addMissingCase insertionPoint fieldName fieldValue ]
 
@@ -157,6 +162,6 @@ addMissingCase : { row : Int, column : Int } -> String -> String -> Fix
 addMissingCase insertionPoint fieldName fieldValue =
     let
         insertion =
-            ", " ++ fieldName ++ " = " ++ fieldValue ++ "\n  " |> Debug.log "INSERTION"
+            ", " ++ fieldName ++ " = " ++ fieldValue ++ "\n  "
     in
-    Fix.insertAt ({ row = insertionPoint.row, column = insertionPoint.column } |> Debug.log "{COLUMN, ROW}") insertion
+    Fix.insertAt { row = insertionPoint.row, column = insertionPoint.column } insertion
