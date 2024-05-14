@@ -1,4 +1,4 @@
-xwz x module ReviewConfig exposing (config)
+module ReviewConfig exposing (config)
 
 import Install.ClauseInCase
 import Install.FieldInTypeAlias

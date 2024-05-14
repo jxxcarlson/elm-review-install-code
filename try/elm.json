@@ -1,6 +1,6 @@
 {
     "type": "application",
-    "source-directories": [
+    "                                                   wsource-directories": [
         "src"
     ],
     "elm-version": "0.19.1",
