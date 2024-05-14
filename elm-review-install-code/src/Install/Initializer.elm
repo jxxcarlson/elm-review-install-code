@@ -33,23 +33,6 @@ type alias Context =
     }
 
 
-
---type alias Context =
---    { lookupTable : ModuleNameLookupTable
---    , moduleName : String
---    }
---initContext : Rule.ContextCreator () Context
---initContext =
---    Rule.initContextCreator
---        (\lookupTable () ->
---            { lookupTable = lookupTable
---            , moduleName = ""
---            }
---        )
---        |> Rule.withModuleNameLookupTable
--- contextCreator : Rule.ContextCreator () Context
-
-
 contextCreator : Rule.ContextCreator () { moduleName : ModuleName }
 contextCreator =
     Rule.initContextCreator

@@ -43,7 +43,6 @@ lastRange expr =
                 |> List.reverse
                 |> List.head
                 |> Maybe.withDefault Range.empty
-                |> Debug.log "LAST_RANGE"
 
         _ ->
             Range.empty

@@ -7,6 +7,7 @@ module Install.FieldInTypeAlias exposing (..)
 -}
 
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
+import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node, range)
 import Elm.Syntax.Range exposing (Range)
 import Elm.Syntax.Type exposing (ValueConstructor)
@@ -16,8 +17,8 @@ import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNam
 import Review.Rule as Rule exposing (Error, Rule)
 
 
-makeAddToTypeAliasRule : String -> String -> Rule
-makeAddToTypeAliasRule typeName_ fieldDefinition_ =
+makeRule : String -> String -> String -> Rule
+makeRule moduleName_ typeName_ fieldDefinition_ =
     let
         fieldName =
             fieldDefinition_
@@ -31,27 +32,29 @@ makeAddToTypeAliasRule typeName_ fieldDefinition_ =
 
         visitor : Node Declaration -> Context -> ( List (Error {}), Context )
         visitor =
-            declarationVisitor typeName_ fieldName fieldCode
+            declarationVisitor moduleName_ typeName_ fieldName fieldCode
     in
-    Rule.newModuleRuleSchemaUsingContextCreator "Install.FieldInTypeAlias" initContext
+    Rule.newModuleRuleSchemaUsingContextCreator "Install.FieldInTypeAlias" contextCreator
         |> Rule.withDeclarationEnterVisitor visitor
         |> Rule.providesFixesForModuleRule
         |> Rule.fromModuleRuleSchema
 
 
 type alias Context =
-    { lookupTable : ModuleNameLookupTable
+    { moduleName : ModuleName
     }
 
 
-initContext : Rule.ContextCreator () Context
-initContext =
+contextCreator : Rule.ContextCreator () { moduleName : ModuleName }
+contextCreator =
     Rule.initContextCreator
-        (\lookupTable () ->
-            { lookupTable = lookupTable
+        (\moduleName () ->
+            { moduleName = moduleName
+
+            -- ...other fields
             }
         )
-        |> Rule.withModuleNameLookupTable
+        |> Rule.withModuleName
 
 
 errorWithFix : String -> String -> String -> Node a -> Maybe Range -> Error {}
@@ -81,11 +84,14 @@ fixMissingField { row, column } fieldCode =
     Fix.replaceRangeBy range fieldCode
 
 
-declarationVisitor : String -> String -> String -> Node Declaration -> Context -> ( List (Error {}), Context )
-declarationVisitor typeName_ fieldName_ fieldValueCode_ node context =
+declarationVisitor : String -> String -> String -> String -> Node Declaration -> Context -> ( List (Error {}), Context )
+declarationVisitor moduleName_ typeName_ fieldName_ fieldValueCode_ node context =
     case Node.value node of
         Declaration.AliasDeclaration type_ ->
             let
+                isInCorrectModule =
+                    moduleName_ == (context.moduleName |> String.join "")
+
                 shouldFix : Node Declaration -> Context -> Bool
                 shouldFix node_ context_ =
                     let
@@ -106,7 +112,7 @@ declarationVisitor typeName_ fieldName_ fieldValueCode_ node context =
                     in
                     not <| List.member fieldName_ fieldsOfNode
             in
-            if Node.value type_.name == typeName_ && shouldFix node context then
+            if isInCorrectModule && Node.value type_.name == typeName_ && shouldFix node context then
                 ( [ errorWithFix typeName_ fieldName_ fieldValueCode_ node (Just <| Node.range node) ]
                 , context
                 )

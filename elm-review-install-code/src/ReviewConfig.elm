@@ -11,9 +11,9 @@ config : List Rule
 config =
     [ -- Install.TypeVariant.makeAddToTypeRule "FrontendMsg" "Bar"
       -- Install.TypeVariant.makeAddToTypeRule "ToBackend" "ResetCounter"
-      Install.Initializer.makeRule "Backend" "init" "message" "\"hohoho!\""
+      -- Install.Initializer.makeRule "Backend" "init" "message" "\"hohoho!\""
+      Install.FieldInTypeAlias.makeRule "Types" "FrontendModel" "quot: String"
 
-    -- Install.FieldInTypeAlias.makeAddToTypeAliasRule "FrontendModel" "quot: String"
     --, Install.ClauseInCase.makeAddToCaseStatementInFunctionRule
     --    "Backend"
     --    "updateFromFrontend"
