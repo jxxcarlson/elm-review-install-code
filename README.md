@@ -18,9 +18,10 @@ over the next weeks and likely months.  Consider it an experiment.
 To test the review code in its current state, clone the project, make sure
 that `elm-review` is installed, and run `npx elm-review` at the 
 root of the project.  A total of five changes should be made to 
-the Lamdera code is `src`.
+the Lamdera code in `src`.
 
 Once the code stabilized, it will be published on the package manager.
 
 
-
+**Note.** The Lamdera code is nt working: the Lamdera codecs have bee
+removed for the time being.  An issue to be addresed.
