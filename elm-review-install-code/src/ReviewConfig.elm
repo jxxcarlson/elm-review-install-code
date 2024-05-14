@@ -9,11 +9,11 @@ import Review.Rule exposing (Rule)
 
 config : List Rule
 config =
-    [ -- Install.TypeVariant.makeAddToTypeRule "FrontendMsg" "Bar"
-      -- Install.TypeVariant.makeAddToTypeRule "ToBackend" "ResetCounter"
-      -- Install.Initializer.makeRule "Backend" "init" "message" "\"hohoho!\""
-      --  Install.FieldInTypeAlias.makeRule "Types" "FrontendModel" "quot: String"
-      Install.ClauseInCase.makeRule
+    [ Install.TypeVariant.makeRule "Types" "FrontendMsg" "Bar"
+    , Install.TypeVariant.makeRule "Types" "ToBackend" "ResetCounter"
+    , Install.FieldInTypeAlias.makeRule "Types" "FrontendModel" "quot: String"
+    , Install.Initializer.makeRule "Backend" "init" "message" "\"hohoho!\""
+    , Install.ClauseInCase.makeRule
         "Backend"
         "updateFromFrontend"
         "ResetCounter"
