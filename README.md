@@ -26,5 +26,5 @@ more information.
 Once the code stabilized, it will be published on the package manager.
 
 
-**Note.** The Lamdera code is nt working: the Lamdera codecs have bee
-removed for the time being.  An issue to be addresed.
+**Note.** The Lamdera code is not working: the Lamdera codecs have bee
+removed for the time being so that `elm-review` will run.  An issue to be addresed.
