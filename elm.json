@@ -5,7 +5,10 @@
     "license": "MIT",
     "version": "1.0.0",
     "exposed-modules": [
-        "Install.ClauseInCase"
+          "Install.ClauseInCase"
+        , "FieldInTypeAlias"
+        , "Initializer"
+        , "TypeVariant"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {
